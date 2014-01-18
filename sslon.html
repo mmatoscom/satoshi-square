@@ -22,7 +22,7 @@
 </body>
 
 <template name="codename">
-  <div class="codename">Your codename is: "{{getCurrentUser}}"</div>
+<div class="codename">Your callsign is: "{{#if getCurrentUser}}{{getCurrentUser}}{{/if}}"</div>
 </template>
 
 <template name="orders">
@@ -79,12 +79,12 @@
 <template name="matches">
   <h4>Your Matched Trades</h4>
   <table class="table table-bordered">
-    <tr><th>Size<br>(mBTC)</th><th>Price<br>(&pound/BTC)</th><th>Total</th><th>Opponent</th></tr>
+    <tr><th>Size<br><span style="font-size: 75%">(mBTC)</span></th><th>Price<br><span style="font-size: 75%">(&pound/BTC)</span></th><th>Total</th><th>Opponent</th></tr>
     {{#each getMyMatches}}
     <tr><td>{{size}}</td><td>{{price}}</td><td>&pound{{subTotal this}}</td><td>{{opponent}} <span class="label dismiss-button" style="float:right">dismiss</span></td></tr>
     {{/each}}
     {{#each getMatches}}
-      <tr><td>{{size}}</td><td>{{price}}</td><td>&pound{{subTotal this}}</td><td>{{owner}} <span class="label dismiss-button" style="float:right">dismiss</span></td></tr>
+      <tr><td>{{size}}</td><td>{{price}}</td><td>&pound{{subTotal this}}</td><td>{{owner}} <span class="label dismiss-button" style="float:right">done</span></td></tr>
     {{/each}}
   </table>
 </template>

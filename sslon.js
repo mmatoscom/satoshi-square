@@ -22,7 +22,7 @@ if (Meteor.isClient) {
     if (document.cookie.length > 0) {
       Session.set("nymuser", readCookie("sslon"));
     } else {
-      var myNym = Nymlist.findOne({}, {reactive: false});
+      var myNym = Nymlist.findOne({});
       if (myNym){
         Session.set("nymuser", myNym.nyms[myNym.taken]);
         Nymlist.update({_id: myNym._id}, {$inc: {taken: 1}});
@@ -34,8 +34,13 @@ if (Meteor.isClient) {
   });
 
   Template.codename.getCurrentUser = function () {
-      return Session.get("nymuser");
+    var user = Session.get("nymuser");
+    if (typeof user === "undefined")
+      return false;
+    else
+      return user;
   }
+
   Template.matches.dismissBtn = function (order) {
       return Session.get("nymuser");
   }
@@ -91,6 +96,7 @@ if (Meteor.isClient) {
       var myPrice = parseFloat(templ.find("#orderPrice").value);
       if (mySize < 0 || myPrice < 0)
         return;
+      templ.find("#orderPrice").value = "";
       if (myType == "bid") {
         var opposing = Orders.find({
           type: "ask",
