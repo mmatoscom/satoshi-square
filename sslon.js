@@ -22,14 +22,21 @@ if (Meteor.isClient) {
     if (document.cookie.length > 0) {
       Session.set("nymuser", readCookie("sslon"));
     } else {
-      var myNym = Nymlist.findOne({});
-      Session.set("nymuser", myNym.nyms[myNym.taken]);
-      Nymlist.update({_id: myNym._id}, {$inc: {taken: 1}});
-      setCookie("sslon", myNym.nyms[myNym.taken],5);
+      var myNym = Nymlist.findOne({}, {reactive: false});
+      if (myNym){
+        Session.set("nymuser", myNym.nyms[myNym.taken]);
+        Nymlist.update({_id: myNym._id}, {$inc: {taken: 1}});
+        setCookie("sslon", myNym.nyms[myNym.taken],5);
+      } else {
+        Session.set("nymuser", "Anonymous");
+      }
     }
   });
 
   Template.codename.getCurrentUser = function () {
+      return Session.get("nymuser");
+  }
+  Template.matches.dismissBtn = function (order) {
       return Session.get("nymuser");
   }
 
@@ -37,17 +44,38 @@ if (Meteor.isClient) {
     return Session.equals("buyModeActive", true);
   };
 
-  Template.orders.getBids = function () {
+  Template.orders.getSubTotal = function () {
+    var tempSubTotal = Session.get("subTotal");
+    if(typeof tempSubTotal === "undefined")
+      tempSubTotal = 0;
+    return tempSubTotal.toFixed(2);
+  };
+
+  Template.book.toDec = function (badNum) {
+    return badNum.toFixed(2);
+  };
+
+  Template.book.getBids = function () {
     return Orders.find({type: "bid", matched: false }, {
+      sort: {price: -1, timestamp: 1}
+    });
+  };
+
+  Template.book.getAsks = function () {
+    return Orders.find({type: "ask", matched: false }, {
       sort: {price: 1, timestamp: 1}
     });
   };
 
-  Template.orders.getAsks = function () {
-    return Orders.find({type: "ask", matched: false }, {
-      sort: {price: -1, timestamp: 1}
-    });
+  Template.book.isMine = function () {
+    return this.owner == Session.get("nymuser") ;
   };
+
+  Template.book.events({
+    'click .delete-button' : function (evt, templ) {
+      Orders.remove(this._id);
+    }
+  });
 
   //Template.orders.preserve(['.buy-toggle','.sell-toggle']);
 
@@ -55,18 +83,19 @@ if (Meteor.isClient) {
     'click #orderSubmit' : function (evt, templ) {
       // template data, if any, is available in 'this'
       if (templ.find("#buyButton.active")) {
-        console.log("submit found");
         var myType = "bid";
       } else {
         var myType = "ask";
       }
-      var mySize = parseFloat(templ.find("#orderSize").value);
+      var mySize = parseInt(templ.find("#orderSize").value);
       var myPrice = parseFloat(templ.find("#orderPrice").value);
+      if (mySize < 0 || myPrice < 0)
+        return;
       if (myType == "bid") {
         var opposing = Orders.find({
           type: "ask",
           matched: false,
-          price: {$lt: myPrice }
+          price: {$lte: myPrice }
         }, {
           sort: {price: 1, timestamp: 1}
         });
@@ -75,21 +104,21 @@ if (Meteor.isClient) {
         var opposing = Orders.find({
           type: "bid",
           matched: false,
-          price: { $gt: myPrice }
+          price: { $gte: myPrice }
         }, {
           sort: {price: -1, timestamp: 1}
         });
       }
       opposing.forEach(function (oppOrder) {
-        if (oppOrder.size >= mySize) {
+        if (oppOrder.size > mySize) {
           Orders.update({_id: oppOrder._id}, { $inc: {size: mySize * -1}});
           Orders.insert({
             type: myType,
             size: mySize,
             price: oppOrder.price,
             matched: true,
-            owner: Session.get("nymuser"),
-            opponent: oppOrder.owner,
+            owner: oppOrder.owner,
+            opponent: Session.get("nymuser")
           });
           mySize = 0;
           return;
@@ -101,8 +130,17 @@ if (Meteor.isClient) {
           }});
           mySize -= oppOrder.size;
         }
+        if (oppOrder.size == mySize) {
+          Orders.update({_id: oppOrder._id},
+            { $set: { matched: true,
+                      opponent: Session.get("nymuser")
+                    }
+            });
+          mySize = 0;
+          return;
+        }
       });
-      if (mySize>0)
+      if (mySize>0) {
         Orders.insert({
           type: myType,
           size: mySize,
@@ -111,7 +149,14 @@ if (Meteor.isClient) {
           owner: Session.get("nymuser"),
           timestamp: new Date()
         });
-    }//,
+      }
+    },
+    'keyup .input-reactive' : function (evt, templ) {
+      var tempPrice = parseFloat(templ.find('#orderPrice').value);
+      var tempSize = parseInt(templ.find('#orderSize').value);
+      var tempSubTotal = tempPrice * tempSize/1000;
+      Session.set("subTotal" , tempSubTotal);
+    }
     // 'click .btn' : function (evt, templ) {
     //   var clickedButton = evt.currentTarget;
     //   var buttonId = $(clickedButton).attr("id");
@@ -128,18 +173,30 @@ if (Meteor.isClient) {
     // }
   });
 
-  Template.matches.getMatches = function () {
-    return Orders.find( { matched: true, $or: [{user: Session.get("nymuser")},
-      {opponent: Session.get("nymuser")}]
+  Template.matches.getMyMatches = function () {
+    return Orders.find( { matched: true, owner: Session.get("nymuser")
     });
   }
+  Template.matches.getMatches = function () {
+    return Orders.find( { matched: true, opponent: Session.get("nymuser"),
+     owner: { $ne: Session.get("nymuser")}});
+  }
+  Template.matches.subTotal = function (order) {
+    var subT = order.price * order.size/1000;
+    return subT.toFixed(2);
+  }
+  Template.matches.events({
+    'click .dismiss-button' : function (evt, templ) {
+      Orders.remove(this._id);
+    }
+  });
 
 }
 
 if (Meteor.isServer) {
   Meteor.startup(function () {
     Nymlist.insert({ nyms: 
-      ["Horse","Ape","Grouse","Falcon","Trout","Sheep","Marlin","Moth","Bandicoot","Wildcat","Dragonfly","Turtle","Cobra","Yak","Monkey","Dingo","Leech","Penguin","Owl","Sturgeon","Seahorse","Parrot","Puma","Warbler","Wombat","Swift","Ostrich","Crane","Skunk","Squid","Scallop","Ferret","Vulture","Deer","Damselfly","Minnow","Caterpillar","Panther","Llama","Jellyfish","Armadillo","Kingfisher","Chimpanzee","Chihuahua","Goldfish","Swan","Wolf","Buzzard","Mite","Carp","Mosquito","Dolphin","Rattlesnake","Snake","Rooster","Whale","Pigeon","Walrus","Mussel","Chameleon","Condor","Mink","Alpaca","Skink","Shrimp","Primate","Mockingbird","Shrew","Parrotfish","Cat","Fish","Possum","Stingray","Toad","Terrier","Ant","Termite","Tyrannosaurus","Otter","Dog","Snail","Cod","Flamingo","Centipede","Python","Octopus","Angelfish","Viper","Wolverine","Gerbil","Hornet","Starfish","Wren","Lemming","Ox","Ocelot","Eagle","Liger","Swallow","Puffin","Fowl","Prawn","Shark","Jaguar","Porpoise","Haddock","Rat","Human","Hound","Koala","Spoonbill","Spider","Badger","Tuna","Camel","Clownfish","Flyingfish","Dinosaur","Antelope","Greyhound","Macaw","Coral","Beaver","Salmon","Jackal","Stork","Meadowlark","Koi","Marmot","Bug","Salamander","Orca","Roadrunner","Tapir","Tarantula","Grasshopper","Nightingale","Pelican","Duck","Cheetah","Pheasant","Halibut","Husky","Kangaroo","Moose","Vole","Raven","Gopher","Tick","Rook","Hoverfly","Mackerel","Wallaby","Anaconda","Silverfish","Poodle","Hawk","Hedgehog","Lamprey","Buffalo","Swordfish","Partridge","Chinchilla","Tiger","Oyster","Mammoth","Elephant","Orangutan","Heron","Mule","Guineafowl","Rhinoceros","Gazelle","Zebra","Mongoose","Tortoise","Cougar","Lynx","Kite","Stoat","Firefly","Reindeer","Narwhal","Donkey","Crow","Fox","Fly","Bison","Hummingbird","Ladybird","Crayfish","Hippopotamus","Setter","Mouse","Newt","Pony","Catfish","Crocodile","Elk","Chicken","Cow","Finch","Eel","Gecko","Hyena","Marmoset","Hare","Piranha","Toucan","Rabbit","Goose","Raccoon","Chipmunk","Gibbon","Sparrow","Gorilla","Platypus","Albatross","Lark","Anteater","Krill","Opossum","Clam","Turkey","Guppy","Panda","Wildebeest","Scorpion","Earthworm","Silkworm","Dove","Bear","Barracuda","Beetle","Harrier","Weasel","Herring","Iguana","Sloth","Bobcat","Magpie","Lizard","Butterfly","Cuckoo","Caribou","Sole","Wasp","Lion","Cattle","Giraffe","Earwig","Bonobo","Quail","Leopard","Mole","Baboon","Frog","Crab","Bat","Alligator","Porcupine","Emu","Woodpecker","Mastodon","Muskox","Locust","Bulldog","Sailfish","Coyote","Whitefish","Peacock","Lemur","Meerkat","Bee","Goat","Parakeet","Cricket","Hamster","Squirrel","Peafowl","Tern","Aardvark","Flea","Lobster"],
+["Falcon","Dragonfly","Cobra","Seahorse","Bobcat","Kingfisher","Jackal","Nightingale","Grasshopper","Viper","Cougar","Meadowlark","Salamander","Roadrunner","Lynx","Firefly","Hummingbird","Wolverine","Wolf","Mongoose","Raven","Dolphin","Rattlesnake","Condor","Damselfly","Tyrannosaurus","Flamingo","Octopus","Angelfish","Eagle","Shark","Jaguar","Butterfly","Tarantula","Cheetah","Husky","Panther","Anaconda","Silverfish","Swordfish","Gazelle","Albatross","Wildebeest","Scorpion","Barracuda","Woodpecker","Silkworm","Horse","Ape","Trout","Sheep","Marlin","Moth","Bandicoot","Wildcat","Turtle","Yak","Monkey","Dingo","Leech","Grouse","Penguin","Owl","Sturgeon","Parrot","Puma","Warbler","Wombat","Swift","Ostrich","Crane","Skunk","Squid","Scallop","Ferret","Vulture","Deer","Minnow","Caterpillar","Llama","Jellyfish","Armadillo","Chimpanzee","Chihuahua","Goldfish","Swan","Buzzard","Mite","Carp","Mosquito","Snake","Rooster","Whale","Pigeon","Walrus","Mussel","Chameleon","Mink","Alpaca","Skink","Shrimp","Primate","Mockingbird","Shrew","Parrotfish","Cat","Fish","Possum","Stingray","Toad","Terrier","Ant","Termite","Otter","Dog","Snail","Cod","Centipede","Python","Gerbil","Hornet","Starfish","Wren","Lemming","Ox","Ocelot","Liger","Swallow","Puffin","Fowl","Prawn","Porpoise","Haddock","Rat","Hound","Koala","Spoonbill","Spider","Badger","Tuna","Camel","Clownfish","Flyingfish","Dinosaur","Antelope","Greyhound","Macaw","Coral","Beaver","Salmon","Stork","Marmot","Orca","Tapir","Pelican","Duck","Pheasant","Halibut","Kangaroo","Moose","Vole","Gopher","Tick","Rook","Hoverfly","Mackerel","Wallaby","Poodle","Hawk","Hedgehog","Lamprey","Buffalo","Partridge","Chinchilla","Tiger","Oyster","Mammoth","Elephant","Orangutan","Heron","Mule","Guineafowl","Rhinoceros","Zebra","Tortoise","Kite","Stoat","Reindeer","Narwhal","Donkey","Crow","Fox","Fly","Bison","Ladybird","Crayfish","Hippopotamus","Setter","Mouse","Newt","Pony","Catfish","Crocodile","Elk","Chicken","Cow","Finch","Eel","Gecko","Hyena","Marmoset","Hare","Piranha","Toucan","Rabbit","Goose","Raccoon","Chipmunk","Gibbon","Sparrow","Gorilla","Platypus","Lark","Anteater","Krill","Clam","Turkey","Guppy","Panda","Earthworm","Dove","Bear","Beetle","Harrier","Weasel","Herring","Iguana","Sloth","Magpie","Lizard","Cuckoo","Caribou","Sole","Wasp","Lion","Cattle","Giraffe","Earwig","Bonobo","Quail","Leopard","Mole","Baboon","Frog","Crab","Bat","Alligator","Porcupine","Emu","Mastodon","Muskox","Locust","Bulldog","Sailfish","Coyote","Whitefish","Peacock","Lemur","Meerkat","Bee","Goat","Parakeet","Cricket","Hamster","Squirrel","Peafowl","Tern","Aardvark","Flea","Lobster","Bug"],
     taken: 0
     })
   });

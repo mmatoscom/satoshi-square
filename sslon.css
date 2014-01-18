@@ -1,8 +1,24 @@
 /* CSS declarations go here */
+body {
+  background: #46483e;
+  color: #eeeeee;
+}
 h3 {
   margin: 0px;
 }
 .btn {
-  margin-top: 0.3em;
-  margin-bottom: 0.3em;
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
 }
+.form-horizontal input {
+  width: 175px;
+}
+/* .form-horizontal .controls { */
+/*   margin-left: 140px; */
+/* } */
+/* .form-horizontal .control-label { */
+/*   margin-left: 60px; */
+/* } */
+/* .form-horizontal .controls:first-child { */
+/*   margin-left 80px; */
+/* } */
