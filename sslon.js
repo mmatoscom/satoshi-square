@@ -1,5 +1,5 @@
-Orders = new Meteor.Collection('Orders');
-Nymlist = new Meteor.Collection("Nymlist");
+Orders = new Meteor.Collection('orders');
+Nymlist = new Meteor.Collection("nymlist");
 
 function readCookie(cookieName) {
    var re = new RegExp('[; ]'+cookieName+'=([^\\s;]*)');
@@ -17,21 +17,28 @@ function setCookie(cookieName,cookieValue,nDays) {
 };
 
 if (Meteor.isClient) {
-  Meteor.startup(function () {
-    Session.set("buyModeActive", true);
+
+  Template.codename.genUser = function () {
+    var user = Session.get("nymuser");
+    if (! typeof user === "undefined")
+      return user;
     if (document.cookie.length > 0) {
-      Session.set("nymuser", readCookie("sslon"));
+      var cookieUser = readCookie("sslon");
+      Session.set("nymuser", cookieUser);
+      return cookieUser;
     } else {
       var myNym = Nymlist.findOne({});
       if (myNym){
-        Session.set("nymuser", myNym.nyms[myNym.taken]);
-        Nymlist.update({_id: myNym._id}, {$inc: {taken: 1}});
-        setCookie("sslon", myNym.nyms[myNym.taken],5);
+        if (myNym.taken < 280) {
+          Session.set("nymuser", myNym.nyms[myNym.taken]);
+          Nymlist.update({_id: myNym._id}, {$inc: {taken: 1}});
+          setCookie("sslon", myNym.nyms[myNym.taken],5);
+        }
       } else {
-        Session.set("nymuser", "Anonymous");
+        return "loading, please wait...";
       }
     }
-  });
+  };
 
   Template.codename.getCurrentUser = function () {
     var user = Session.get("nymuser");
@@ -39,14 +46,10 @@ if (Meteor.isClient) {
       return false;
     else
       return user;
-  }
+  };
 
   Template.matches.dismissBtn = function (order) {
-      return Session.get("nymuser");
-  }
-
-  Template.orders.buyMode = function () {
-    return Session.equals("buyModeActive", true);
+    return Session.get("nymuser");
   };
 
   Template.orders.getSubTotal = function () {
@@ -163,20 +166,6 @@ if (Meteor.isClient) {
       var tempSubTotal = tempPrice * tempSize/1000;
       Session.set("subTotal" , tempSubTotal);
     }
-    // 'click .btn' : function (evt, templ) {
-    //   var clickedButton = evt.currentTarget;
-    //   var buttonId = $(clickedButton).attr("id");
-    //   if (buttonId == "buyButton") {
-    //     Session.set("buyModeActive", true);
-    //     //$(clickedButton).toggleClass("btn-success", true);
-    //     //$('#sellButton').toggleClass("btn-danger", false);
-    //   }
-    //   if (buttonId == "sellButton") {
-    //     Session.set("buyModeActive", false);
-    //     //$(clickedButton).toggleClass("btn-danger", true);
-    //     //$('#buyButton').toggleClass("btn-success", false);
-    //   }
-    // }
   });
 
   Template.matches.getMyMatches = function () {
