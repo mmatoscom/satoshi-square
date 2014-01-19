@@ -2,17 +2,19 @@ Orders = new Meteor.Collection('orders');
 Nymlist = new Meteor.Collection("nymlist");
 
 function readCookie(cookieName) {
-   var re = new RegExp('[; ]'+cookieName+'=([^\\s;]*)');
-    var sMatch = (' '+document.cookie).match(re);
-     if (cookieName && sMatch) return unescape(sMatch[1]);
-      return '';
+  var re = new RegExp('[; ]'+cookieName+'=([^\\s;]*)');
+  var sMatch = (' '+document.cookie).match(re);
+  if (cookieName && sMatch)
+    return unescape(sMatch[1]);
+  return '';
 };
 function setCookie(cookieName,cookieValue,nDays) {
- var today = new Date();
- var expire = new Date();
- if (nDays==null || nDays==0) nDays=1;
- expire.setTime(today.getTime() + 3600000*24*nDays);
- document.cookie = cookieName+"="+escape(cookieValue)
+  var today = new Date();
+  var expire = new Date();
+  if (nDays==null || nDays==0)
+    nDays=1;
+  expire.setTime(today.getTime() + 3600000*24*nDays);
+  document.cookie = cookieName+"="+escape(cookieValue)
                  + ";expires="+expire.toGMTString();
 };
 
@@ -84,8 +86,6 @@ if (Meteor.isClient) {
       Orders.remove(this._id);
     }
   });
-
-  //Template.orders.preserve(['.buy-toggle','.sell-toggle']);
 
   Template.orders.events({
     'click #orderSubmit' : function (evt, templ) {
@@ -191,7 +191,7 @@ if (Meteor.isClient) {
 if (Meteor.isServer) {
   Meteor.startup(function () {
     Nymlist.insert({ nyms: 
-["Falcon","Dragonfly","Cobra","Seahorse","Bobcat","Kingfisher","Jackal","Nightingale","Grasshopper","Viper","Cougar","Meadowlark","Salamander","Roadrunner","Lynx","Firefly","Hummingbird","Wolverine","Wolf","Mongoose","Raven","Dolphin","Rattlesnake","Condor","Damselfly","Tyrannosaurus","Flamingo","Octopus","Angelfish","Eagle","Shark","Jaguar","Butterfly","Tarantula","Cheetah","Husky","Panther","Anaconda","Silverfish","Swordfish","Gazelle","Albatross","Wildebeest","Scorpion","Barracuda","Woodpecker","Silkworm","Horse","Ape","Trout","Sheep","Marlin","Moth","Bandicoot","Wildcat","Turtle","Yak","Monkey","Dingo","Leech","Grouse","Penguin","Owl","Sturgeon","Parrot","Puma","Warbler","Wombat","Swift","Ostrich","Crane","Skunk","Squid","Scallop","Ferret","Vulture","Deer","Minnow","Caterpillar","Llama","Jellyfish","Armadillo","Chimpanzee","Chihuahua","Goldfish","Swan","Buzzard","Mite","Carp","Mosquito","Snake","Rooster","Whale","Pigeon","Walrus","Mussel","Chameleon","Mink","Alpaca","Skink","Shrimp","Primate","Mockingbird","Shrew","Parrotfish","Cat","Fish","Possum","Stingray","Toad","Terrier","Ant","Termite","Otter","Dog","Snail","Cod","Centipede","Python","Gerbil","Hornet","Starfish","Wren","Lemming","Ox","Ocelot","Liger","Swallow","Puffin","Fowl","Prawn","Porpoise","Haddock","Rat","Hound","Koala","Spoonbill","Spider","Badger","Tuna","Camel","Clownfish","Flyingfish","Dinosaur","Antelope","Greyhound","Macaw","Coral","Beaver","Salmon","Stork","Marmot","Orca","Tapir","Pelican","Duck","Pheasant","Halibut","Kangaroo","Moose","Vole","Gopher","Tick","Rook","Hoverfly","Mackerel","Wallaby","Poodle","Hawk","Hedgehog","Lamprey","Buffalo","Partridge","Chinchilla","Tiger","Oyster","Mammoth","Elephant","Orangutan","Heron","Mule","Guineafowl","Rhinoceros","Zebra","Tortoise","Kite","Stoat","Reindeer","Narwhal","Donkey","Crow","Fox","Fly","Bison","Ladybird","Crayfish","Hippopotamus","Setter","Mouse","Newt","Pony","Catfish","Crocodile","Elk","Chicken","Cow","Finch","Eel","Gecko","Hyena","Marmoset","Hare","Piranha","Toucan","Rabbit","Goose","Raccoon","Chipmunk","Gibbon","Sparrow","Gorilla","Platypus","Lark","Anteater","Krill","Clam","Turkey","Guppy","Panda","Earthworm","Dove","Bear","Beetle","Harrier","Weasel","Herring","Iguana","Sloth","Magpie","Lizard","Cuckoo","Caribou","Sole","Wasp","Lion","Cattle","Giraffe","Earwig","Bonobo","Quail","Leopard","Mole","Baboon","Frog","Crab","Bat","Alligator","Porcupine","Emu","Mastodon","Muskox","Locust","Bulldog","Sailfish","Coyote","Whitefish","Peacock","Lemur","Meerkat","Bee","Goat","Parakeet","Cricket","Hamster","Squirrel","Peafowl","Tern","Aardvark","Flea","Lobster","Bug"],
+      ["Falcon","Dragonfly","Cobra","Seahorse","Bobcat","Kingfisher","Jackal","Nightingale","Grasshopper","Viper","Cougar","Meadowlark","Salamander","Roadrunner","Lynx","Firefly","Hummingbird","Wolverine","Wolf","Mongoose","Raven","Dolphin","Rattlesnake","Condor","Damselfly","Tyrannosaurus","Flamingo","Octopus","Angelfish","Eagle","Shark","Jaguar","Butterfly","Tarantula","Cheetah","Husky","Panther","Anaconda","Silverfish","Swordfish","Gazelle","Albatross","Wildebeest","Scorpion","Barracuda","Woodpecker","Silkworm","Horse","Ape","Trout","Sheep","Marlin","Moth","Bandicoot","Wildcat","Turtle","Yak","Monkey","Dingo","Leech","Grouse","Penguin","Owl","Sturgeon","Parrot","Puma","Warbler","Wombat","Swift","Ostrich","Crane","Skunk","Squid","Scallop","Ferret","Vulture","Deer","Minnow","Caterpillar","Llama","Jellyfish","Armadillo","Chimpanzee","Chihuahua","Goldfish","Swan","Buzzard","Mite","Carp","Mosquito","Snake","Rooster","Whale","Pigeon","Walrus","Mussel","Chameleon","Mink","Alpaca","Skink","Shrimp","Primate","Mockingbird","Shrew","Parrotfish","Cat","Fish","Possum","Stingray","Toad","Terrier","Ant","Termite","Otter","Dog","Snail","Cod","Centipede","Python","Gerbil","Hornet","Starfish","Wren","Lemming","Ox","Ocelot","Liger","Swallow","Puffin","Fowl","Prawn","Porpoise","Haddock","Rat","Hound","Koala","Spoonbill","Spider","Badger","Tuna","Camel","Clownfish","Flyingfish","Dinosaur","Antelope","Greyhound","Macaw","Coral","Beaver","Salmon","Stork","Marmot","Orca","Tapir","Pelican","Duck","Pheasant","Halibut","Kangaroo","Moose","Vole","Gopher","Tick","Rook","Hoverfly","Mackerel","Wallaby","Poodle","Hawk","Hedgehog","Lamprey","Buffalo","Partridge","Chinchilla","Tiger","Oyster","Mammoth","Elephant","Orangutan","Heron","Mule","Guineafowl","Rhinoceros","Zebra","Tortoise","Kite","Stoat","Reindeer","Narwhal","Donkey","Crow","Fox","Fly","Bison","Ladybird","Crayfish","Hippopotamus","Setter","Mouse","Newt","Pony","Catfish","Crocodile","Elk","Chicken","Cow","Finch","Eel","Gecko","Hyena","Marmoset","Hare","Piranha","Toucan","Rabbit","Goose","Raccoon","Chipmunk","Gibbon","Sparrow","Gorilla","Platypus","Lark","Anteater","Krill","Clam","Turkey","Guppy","Panda","Earthworm","Dove","Bear","Beetle","Harrier","Weasel","Herring","Iguana","Sloth","Magpie","Lizard","Cuckoo","Caribou","Sole","Wasp","Lion","Cattle","Giraffe","Earwig","Bonobo","Quail","Leopard","Mole","Baboon","Frog","Crab","Bat","Alligator","Porcupine","Emu","Mastodon","Muskox","Locust","Bulldog","Sailfish","Coyote","Whitefish","Peacock","Lemur","Meerkat","Bee","Goat","Parakeet","Cricket","Hamster","Squirrel","Peafowl","Tern","Aardvark","Flea","Lobster","Bug"],
     taken: 0
     })
   });
