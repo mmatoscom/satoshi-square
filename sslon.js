@@ -163,6 +163,7 @@ if (Meteor.isClient) {
     'keyup .input-reactive' : function (evt, templ) {
       var tempPrice = parseFloat(templ.find('#orderPrice').value);
       var tempSize = parseInt(templ.find('#orderSize').value);
+      // TODO: Check tempSize for div/0 error.
       var tempSubTotal = tempPrice * tempSize/1000;
       Session.set("subTotal" , tempSubTotal);
     }
