@@ -71,7 +71,9 @@
     <table class="table table-bordered">
       <tr><th>Size (mBTC)</th><th>Price ($/BTC)</th></tr>
         {{#each getAsks}}
-          <tr><td>{{size}}</td><td>{{toDec price}}</td></tr>
+          <tr><td>{{size}}</td><td>{{toDec price}} {{#if isMine}}
+              <span class="label delete-button" style="float:right">delete</span>
+            {{/if}}</td></tr>
         {{/each}}
     </table>
   </div>
