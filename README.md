@@ -6,4 +6,5 @@ Satoshi Square is intended to easily setup your auctions platform, all you need
 to do is to build the docker image, and launch at the meetup day. <br>
 Some screenshots to be added shortly. <br><br>
 `docker build -t satoshi-square .` <br>
-`docker run -ti -P satoshi-square`
+`docker run --name satoshi-square -P -d satoshi-square`
+
