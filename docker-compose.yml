@@ -1,0 +1,15 @@
+version: "3"
+
+services:
+  satoshi:
+    build: https://github.com/mmatoscom/satoshi-square.git
+  ngrok:
+    build: https://github.com/mmatoscom/docker-ngrok.git
+    command: "ngrok http satoshi:3000"
+    
+    links: 
+      -  satoshi  
+    depends_on:
+      - satoshi
+    ports:
+      - "3000:3000"
